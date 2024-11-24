@@ -221,6 +221,22 @@ class SlidingWindowProblems:
             right += 1
         return "" if min_length == math.inf else s[min_left:min_right+1]
 
+    # https://leetcode.com/problems/minimum-size-subarray-sum/description/?envType=problem-list-v2&envId=binary-search
+    def min_subarray_len(self, target: int, nums: list[int]) -> int:
+        left = 0
+        ans = len(nums) + 1
+        cur_sum = 0
+
+        for right, value in enumerate(nums):
+            cur_sum += nums[right]
+
+            while left < len(nums) and cur_sum >= target:
+                ans = min(ans, right-left+1)
+                cur_sum -= cur_sum[left]
+                left += 1
+        return ans if ans <= len(nums) else 0
+
+
     def call_method(self):
         s1 = "adc"
         s2 = "dcda"

@@ -1,4 +1,5 @@
 from arrays.common import ArrayProblems
+from binary_search.common import BinarySearchProblem
 from contest.common import ContestProblems
 from daily.common import DailyProblem
 from hash_table.common import HashTableProblems
@@ -31,7 +32,10 @@ if __name__ == "__main__":
     # contestProblem = ContestProblems()
     # contestProblem.call_method()
 
-    slidingWindow = SlidingWindowProblems()
-    slidingWindow.call_method()
+    # slidingWindow = SlidingWindowProblems()
+    # slidingWindow.call_method()
+
+    binarySearchProblem = BinarySearchProblem()
+    binarySearchProblem.call_method()
 
     print("end")

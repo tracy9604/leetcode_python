@@ -1,5 +1,6 @@
 import heapq
 import math
+from bisect import bisect_left, bisect_right
 from collections import deque
 from typing import Optional
 
@@ -466,8 +467,167 @@ class DailyProblem:
             ans += str(len(prefix)) + prefix[-1]
         return ans
 
+    # https://leetcode.com/problems/count-the-number-of-fair-pairs/description/
+    def count_fair_pairs(self, nums: list[int], lower: int, upper: int) -> int:
+        nums.sort()
+        n = len(nums)
+        count = 0
+
+        # find the second element in the pair
+        for i in range(n):
+            left = bisect_left(nums, lower - nums[i], i+1)
+            right = bisect_right(nums, upper-nums[i], i+1)
+            count += right -left
+
+        return count
+
+    # https://leetcode.com/problems/shortest-subarray-to-be-removed-to-make-array-sorted/description/
+    def find_length_shortest_subarray(self, arr: list[int]) -> int:
+        length = len(arr)
+        left,right = 0, length -1
+
+        # move the left pointer as long as the sub array is non-decreasing
+        while left + 1 < length and arr[left] <= arr[left+1]:
+            left += 1
+
+        # move the right pointer as long ass the sub array is non-decreasing
+        while right -1 >= 0 and arr[right-1] <= arr[right]:
+            right -= 1
+
+        # if the whole array is non-decreasing
+        if left >= right:
+            return 0
+
+        ans = min(length-left-1, right)
+        new_right = right
+
+        for new_left in range(left+1):
+            while new_right < length and arr[new_right] < arr[new_left]:
+                new_right += 1
+
+            ans = min(ans, new_right-new_left-1)
+        return ans
+
+    # https://leetcode.com/problems/find-the-power-of-k-size-subarrays-i
+    def power_array(self, nums: list[int], k: int) -> list[int]:
+        n = len(nums)
+        result = []
+
+        for i in range(n-k+1):
+            subarray = nums[i: i+k]
+            if all(subarray[j] <= subarray[j+1] for j in range(k-1)):
+                result.append(max(subarray))
+            else:
+                result.append(-1)
+        return result
+
+    # https://leetcode.com/problems/defuse-the-bomb/description/
+    def decrypt(self, code: list[int], k: int) -> list[int]:
+        n = len(code)
+        if k == 0:
+            return [0] * n
+
+        # create a double array
+        double_code = code + code
+
+        # compute the prefix sum
+        prefix_sum = [0] * (2 *n +1)
+        for i in range(2*n+1):
+            prefix_sum[i] = prefix_sum[i-1] + double_code[i-1]
+
+        result = [0] * n
+        for i in range(n):
+            if k > 0:
+                result[i] = prefix_sum[i+k+1] - prefix_sum[i+1]
+            else:
+                result[i] = prefix_sum[i+n] - prefix_sum[i+n+k]
+        return result
+
+    # https://leetcode.com/problems/maximum-sum-of-distinct-subarrays-with-length-k/description/
+    def find_max_subarray_sum(self, nums: list[int], k: int) -> int:
+        if len(nums) < k:
+            return 0
+        left = 0
+        cur_window_counter ={}
+        for i in range(k-1):
+            cur_window_counter[nums[i]] = cur_window_counter.get(nums[i], 0) + 1
+        ans = 0
+
+        for right in range(k-1, len(nums)):
+            cur_window_counter[nums[right]] = cur_window_counter.get(nums[right], 0) + 1
+
+            if len(cur_window_counter.keys()) == k:
+                ans = max(ans, sum(nums[left: right+1]))
+
+            cur_window_counter[nums[left]] -= 1
+            if cur_window_counter[nums[left]] == 0:
+                del cur_window_counter[nums[left]]
+            left +=1
+
+        return ans
+
+    # https://leetcode.com/problems/count-unguarded-cells-in-the-grid/description/
+    def count_unguarded(self, m: int, n: int, guards: list[list[int]], walls: list[list[int]]) -> int:
+        # create grid
+        grid = [[0] * n for _ in range(m)]
+
+        # mark position of guards and walls
+        for guard_row, guard_col in guards:
+            grid[guard_row][guard_col] = 2
+        for wall_row, wall_col in walls:
+            grid[wall_row][wall_col] = 2
+
+        # directions of guards
+        directions = [(-1, 0), (0, 1), (1, 0), (0, -1)]
+
+        for guard_row, guard_col in guards:
+            for delta_row, delta_col in directions:
+                row, col = guard_row, guard_col
+                while 0 <= row + delta_row < m and 0 <= col + delta_col < n and grid[row + delta_row][col + delta_col] < 2:
+                    row, col = row + delta_row, col + delta_col
+                    grid[row][col] = 1
+
+        return sum(cell == 0 for row in grid for cell in row)
+
+    # https://leetcode.com/problems/rotating-the-box
+    def rotate_the_box(self, box: list[list[str]]) -> list[list[str]]:
+        rows, cols = len(box), len(box[0])
+
+        # Initialize the answer matrix with None, rotated 90 degrees
+        rotated_box = [[None] * rows for _ in range(cols)]
+
+        # Rotate the box 90 degrees clockwise to the right
+        for row in range(rows):
+            for col in range(cols):
+                rotated_box[col][rows - row - 1] = box[row][col]
+
+        # now the columns of rotated_box is rows of the original box
+        for col in range(rows):
+            queue = deque()
+
+            for row in reversed(range(cols)):
+                # when we see  an obstacle, we clear the queue as it can't be passed
+                if rotated_box[row][col] == "*":
+                    queue.clear()
+                # when we find a space, add this position to queue
+                elif rotated_box[row][col] == ".":
+                    queue.append(row)
+                # when we find a stone, and there is an available positon for it
+                elif queue:
+                    # take the lowest position
+                    new_pos = queue.popleft()
+                    rotated_box[new_pos][col] = '#'
+                    # update the old position to  empty '.'
+                    rotated_box[row][col] = '.'
+                    queue.append(row)
+        return rotated_box
+
+
     def call_method(self):
         print("start")
-        s = "aaaaaaaaaaaaaabb"
-        print(self.compress_string(s))
+        m = 4
+        n = 6
+        guards = [[0,0],[1,1],[2,3]]
+        walls = [[0,1],[2,2],[1,4]]
+        print(self.count_unguarded(m,n,guards, walls))
         print("end")
